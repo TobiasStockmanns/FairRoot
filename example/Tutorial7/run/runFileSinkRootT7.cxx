@@ -1,15 +1,15 @@
 /********************************************************************************
  *    Copyright (C) 2014 GSI Helmholtzzentrum fuer Schwerionenforschung GmbH    *
  *                                                                              *
- *              This software is distributed under the terms of the             * 
- *         GNU Lesser General Public Licence version 3 (LGPL) version 3,        *  
+ *              This software is distributed under the terms of the             *
+ *         GNU Lesser General Public Licence version 3 (LGPL) version 3,        *
  *                  copied verbatim in the file "LICENSE"                       *
  ********************************************************************************/
-/* 
- * File:   runFileSinkBin.cxx
+/*
+ * File:   runFileSinkRoot.cxx
  * Author: winckler
  *
- * Created on November 12, 2014, 6:39 PM
+ * Created on January 15, 2015, 7:51 PM
  */
 
 /// std
@@ -31,25 +31,25 @@
 #include "GenericFileSink.h"
 
 /// FairRoot - base/MQ
+#include "RootSerializer.h"
 #include "RootOutFileManager.h"
 
 /// FairRoot - Tutorial7
 #include "MyHit.h"
-#include "MyHitSerializer.h"
 
 // alternative to RootOutFileManager : BinaryOutFileManager
 // storage policy of BinaryOutFileManager :
 //#include "TriviallyCopyableDataSaver.h"
 //#include "BoostDataSaver.h"
 
+
 using namespace std;
 /// ////////////////////////////////////////////////////////////////////////
-// payload and policy type definition
+// payload and policy type definitions
 typedef MyHit                                        THit;
-typedef MyHitDeSerializer_t                          TInputPolicy;
-// Remark --> here, serialization by hand. Be aware that it is not a cross-platform format
-typedef RootOutFileManager<THit>                     TOutputPolicy; 
-typedef GenericFileSink<TInputPolicy,TOutputPolicy>  TSink;    
+typedef RootDeSerializer                             TInputPolicy;
+typedef RootOutFileManager<THit>                     TOutputPolicy;
+typedef GenericFileSink<TInputPolicy,TOutputPolicy>  TSink;
 
 TSink filesink;
 
@@ -80,7 +80,7 @@ typedef struct DeviceOptions
         id(), ioThreads(0),
         inputSocketType(), inputBufSize(0), inputMethod(), inputAddress(),
         filename(), treename(), branchname(), classname(), fileoption(), useTClonesArray(true) {}
-    
+
     string id;
     int ioThreads;
     string inputSocketType;
@@ -145,86 +145,103 @@ inline bool parse_cmd_line(int _argc, char* _argv[], DeviceOptions* _options)
 
     if ( vm.count("input-address") )
         _options->inputAddress = vm["input-address"].as<string>();
-    
+
     if ( vm.count("input-file") )
         _options->filename = vm["input-file"].as<string>();
-    
+
     if ( vm.count("tree") )
         _options->treename = vm["tree"].as<string>();
-    
+
     if ( vm.count("branch") )
         _options->branchname = vm["branch"].as<string>();
-    
+
     if ( vm.count("class-name") )
         _options->classname = vm["class-name"].as<string>();
-    
+
     if ( vm.count("file-option") )
         _options->fileoption = vm["file-option"].as<string>();
-    
+
     if ( vm.count("use-TClonesArray") )
         _options->useTClonesArray = vm["use-TClonesArray"].as<bool>();
-    
+
     return true;
 }
 
 int main(int argc, char** argv)
 {
-    s_catch_signals();
-    DeviceOptions_t options;
     try
     {
-        if (!parse_cmd_line(argc, argv, &options))
-            return 0;
+        s_catch_signals();
+        DeviceOptions_t options;
+        try
+        {
+            if (!parse_cmd_line(argc, argv, &options))
+                return 0;
+        }
+        catch (std::exception& err)
+        {
+            LOG(ERROR) << err.what();
+
+            return 1;
+        }
+
+        MQLOG(INFO) << "PID: " << getpid();
+
+    #ifdef NANOMSG
+        FairMQTransportFactory* transportFactory = new FairMQTransportFactoryNN();
+    #else
+        FairMQTransportFactory* transportFactory = new FairMQTransportFactoryZMQ();
+    #endif
+
+        filesink.SetTransport(transportFactory);
+
+        filesink.SetProperty(TSink::Id, options.id);
+        filesink.SetProperty(TSink::NumIoThreads, options.ioThreads);
+
+        filesink.SetProperty(TSink::NumInputs, 1);
+        filesink.SetProperty(TSink::NumOutputs, 0);
+
+        filesink.InitInputContainer( options.classname.c_str() );
+        filesink.SetFileProperties(options.filename,options.treename,options.branchname,options.classname,
+                                                    options.fileoption,options.useTClonesArray);
+
+        filesink.ChangeState(TSink::INIT);
+        filesink.SetProperty(TSink::InputSocketType, options.inputSocketType);
+        filesink.SetProperty(TSink::InputRcvBufSize, options.inputBufSize);
+        filesink.SetProperty(TSink::InputMethod, options.inputMethod);
+        filesink.SetProperty(TSink::InputAddress, options.inputAddress);
+
+        filesink.ChangeState(TSink::SETOUTPUT);
+        filesink.ChangeState(TSink::SETINPUT);
+        filesink.ChangeState(TSink::BIND);
+        filesink.ChangeState(TSink::CONNECT);
+        filesink.ChangeState(TSink::RUN);
+
+        try
+        {
+            // wait until the running thread has finished processing.
+            boost::unique_lock<boost::mutex> lock(filesink.fRunningMutex);
+            while (!filesink.fRunningFinished)
+            {
+                filesink.fRunningCondition.wait(lock);
+            }
+        }
+        catch( boost::thread_interrupted& interrupt )
+        {
+            boost::unique_lock<boost::mutex> lock(filesink.fRunningMutex);
+            LOG(ERROR)<<boost::this_thread::get_id();
+            return 1;
+        }
+
+        filesink.ChangeState(TSink::STOP);
+        filesink.ChangeState(TSink::END);
     }
-    catch (exception& e)
+    catch (std::exception& e)
     {
-        MQLOG(ERROR) << e.what();
+        LOG(ERROR)  << "Unhandled Exception reached the top of main: "
+                    << e.what() << ", application will now exit";
         return 1;
     }
 
-    MQLOG(INFO) << "PID: " << getpid();
-
-#ifdef NANOMSG
-    FairMQTransportFactory* transportFactory = new FairMQTransportFactoryNN();
-#else
-    FairMQTransportFactory* transportFactory = new FairMQTransportFactoryZMQ();
-#endif
-
-    filesink.SetTransport(transportFactory);
-
-    filesink.SetProperty(TSink::Id, options.id);
-    filesink.SetProperty(TSink::NumIoThreads, options.ioThreads);
-
-    filesink.SetProperty(TSink::NumInputs, 1);
-    filesink.SetProperty(TSink::NumOutputs, 0);
-    
-    filesink.InitInputContainer( options.classname.c_str() );
-    filesink.SetFileProperties(options.filename,options.treename,options.branchname,options.classname,
-                                                options.fileoption,options.useTClonesArray);
-
-    
-    filesink.ChangeState(TSink::INIT);
-    filesink.SetProperty(TSink::InputSocketType, options.inputSocketType);
-    filesink.SetProperty(TSink::InputRcvBufSize, options.inputBufSize);
-    filesink.SetProperty(TSink::InputMethod, options.inputMethod);
-    filesink.SetProperty(TSink::InputAddress, options.inputAddress);
-
-    filesink.ChangeState(TSink::SETOUTPUT);
-    filesink.ChangeState(TSink::SETINPUT);
-    filesink.ChangeState(TSink::BIND);
-    filesink.ChangeState(TSink::CONNECT);
-    filesink.ChangeState(TSink::RUN);
-
-    // wait until the running thread has finished processing.
-    boost::unique_lock<boost::mutex> lock(filesink.fRunningMutex);
-    while (!filesink.fRunningFinished)
-    {
-        filesink.fRunningCondition.wait(lock);
-    }
-
-    filesink.ChangeState(TSink::STOP);
-    filesink.ChangeState(TSink::END);
-
     return 0;
 }
-
