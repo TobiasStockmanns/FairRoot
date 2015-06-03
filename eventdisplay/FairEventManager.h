@@ -22,6 +22,8 @@ class FairRootManager; //does not work with streamer, reason unclear
 class FairTask;
 class TGListTreeItem;
 
+class MultiView;
+
 class FairEventManager : public TEveEventManager
 {
   public:
@@ -52,6 +54,7 @@ class FairEventManager : public TEveEventManager
     virtual Float_t GetMinEnergy() {return fMinEnergy;}
     void UpdateEditor();
     virtual void AddParticlesToPdgDataBase(Int_t pdg=0);
+    MultiView* GetMultiView(){return fMultiView;}
 
     ClassDef(FairEventManager,1);
   private:
@@ -65,6 +68,7 @@ class FairEventManager : public TEveEventManager
     Float_t fMaxEnergy;         //!
     Float_t fEvtMinEnergy;         //!
     Float_t fEvtMaxEnergy;         //!
+    MultiView* fMultiView; //!
 
     static FairEventManager*    fgRinstance; //!
 

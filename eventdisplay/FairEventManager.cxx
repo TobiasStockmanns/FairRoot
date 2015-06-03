@@ -14,6 +14,7 @@
 
 #include "FairRootManager.h"            // for FairRootManager
 #include "FairRunAna.h"                 // for FairRunAna
+#include "MultiView.h"
 
 #include "TDatabasePDG.h"               // for TDatabasePDG
 #include "TEveGeoNode.h"                // for TEveGeoTopNode
@@ -53,11 +54,14 @@ FairEventManager::FairEventManager()
 void FairEventManager::Init(Int_t visopt, Int_t vislvl, Int_t maxvisnds)
 {
   TEveManager::Create();
+  fMultiView = new MultiView();
   fRunAna->Init();
   if(gGeoManager) {
     TGeoNode* N=  gGeoManager->GetTopNode();
     TEveGeoTopNode* TNod=new  TEveGeoTopNode(gGeoManager, N, visopt, vislvl, maxvisnds);
     gEve->AddGlobalElement(TNod);
+    fMultiView->ImportGeomRPhi(TNod);
+    fMultiView->ImportGeomRhoZ(TNod);
     gEve->FullRedraw3D(kTRUE);
     fEvent= gEve->AddEvent(this);
   }
@@ -81,18 +85,40 @@ void FairEventManager::GotoEvent(Int_t event)
 {
   fEntry=event;
   fRunAna->Run((Long64_t)event);
+  TEveElement* top = gEve->GetCurrentEvent();
+
+  fMultiView->DestroyEventRPhi();
+  fMultiView->ImportEventRPhi(top);
+
+  fMultiView->DestroyEventRhoZ();
+  fMultiView->ImportEventRhoZ(top);
 }
 //______________________________________________________________________________
 void FairEventManager::NextEvent()
 {
   fEntry+=1;
   fRunAna->Run((Long64_t)fEntry);
+
+  TEveElement* top = gEve->GetCurrentEvent();
+
+  fMultiView->DestroyEventRPhi();
+  fMultiView->ImportEventRPhi(top);
+
+  fMultiView->DestroyEventRhoZ();
+  fMultiView->ImportEventRhoZ(top);
 }
 //______________________________________________________________________________
 void FairEventManager::PrevEvent()
 {
   fEntry-=1;
   fRunAna->Run((Long64_t)fEntry);
+  TEveElement* top = gEve->GetCurrentEvent();
+
+  fMultiView->DestroyEventRPhi();
+  fMultiView->ImportEventRPhi(top);
+
+  fMultiView->DestroyEventRhoZ();
+  fMultiView->ImportEventRhoZ(top);
 }
 //______________________________________________________________________________
 void FairEventManager::Close()

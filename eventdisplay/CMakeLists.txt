@@ -51,6 +51,7 @@ FairMCPointDraw.cxx
 FairHitDraw.cxx
 FairHitPointSetDraw.cxx
 FairTimeStampPointDraw.cxx
+MultiView.cxx
 )
 
 Set(HEADERS )
