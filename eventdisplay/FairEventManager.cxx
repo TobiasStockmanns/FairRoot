@@ -434,7 +434,6 @@ void FairEventManager::LoadXMLDetector(TGeoNode* node, FairXMLNode* xml,Int_t de
 }
 
 Int_t FairEventManager::StringToColor(TString color) const {
-	Int_t color_val = 0;
 	if (color.Contains("k")) {
 		Int_t plus_index = color.First('+');
 		Int_t minus_index = color.First('-');
@@ -486,6 +485,7 @@ Int_t FairEventManager::StringToColor(TString color) const {
 		return col_val;
 	}else{
 	}
+	return 0;
 }
 
 void FairEventManager::TakePicture()

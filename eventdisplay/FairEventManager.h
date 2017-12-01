@@ -58,7 +58,7 @@ class FairEventManager : public TEveEventManager
     virtual void SetMinEnergy( Float_t min) {fMinEnergy = min;}
     virtual void SetEvtMaxEnergy( Float_t max) {fEvtMaxEnergy = max;}
     virtual void SetEvtMinEnergy( Float_t min) {fEvtMinEnergy = min;}
-    virtual void SetCreatePicture(Bool_t val) { fCreatePicture = val; std::cout << "CreatePicture set" << val; }
+    virtual void SetCreatePicture(Bool_t val) { fCreatePicture = val;}
     virtual Float_t GetEvtMaxEnergy() {return fEvtMaxEnergy ;}
     virtual Float_t GetEvtMinEnergy() {return fEvtMinEnergy ;}
     virtual Float_t GetMaxEnergy() {return fMaxEnergy;}

@@ -52,6 +52,7 @@ FairHitDraw.cxx
 FairHitPointSetDraw.cxx
 FairTimeStampPointDraw.cxx
 FairXMLNode.cxx
+FairTimeLabelDraw.cxx
 )
 
 Set(HEADERS )
