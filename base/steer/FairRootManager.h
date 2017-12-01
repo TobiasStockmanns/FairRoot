@@ -184,6 +184,7 @@ class FairRootManager : public TObject
     void                UpdateListOfTimebasedBranches();
     /**Use time stamps to read data and not tree entries*/
     void                RunWithTimeStamps() {fTimeStamps = kTRUE;}
+    bool				   IsTimeStampMode() { return fTimeStamps; }
 
     /**Set the branch name list*/
     void                SetBranchNameList(TList* list);

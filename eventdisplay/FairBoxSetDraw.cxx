@@ -113,11 +113,10 @@ void FairBoxSetDraw::Exec(Option_t* /*option*/)
     //  cout<<  "FairBoxSetDraw::Init() Exec! " << fList->GetEntriesFast() << endl;
     CreateBoxSet();
     if (FairRunAna::Instance()->IsTimeStamp()) {
-      fList->Clear();
-      Double_t eventTime = FairRootManager::Instance()->GetEventTime();
+      fList->Delete();
+      Double_t eventTime = FairEventManager::Instance()->GetT0Time();
       if (fUseEventTime) { fStartTime = eventTime - fTimeWindowMinus; }
       cout << "EventTime: " << eventTime << " TimeWindow: " << fStartTime << " - " << eventTime + fTimeWindowPlus << std::endl;
-
       fList = FairRootManager::Instance()->GetData(GetName(), fStartFunctor, fStartTime, fStopFunctor, eventTime + fTimeWindowPlus); //FairRootManager::Instance()->GetEventTime() +
 
     }

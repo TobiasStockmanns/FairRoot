@@ -35,20 +35,33 @@ class FairEventManagerEditor : public TGedFrame
     TObject* fObject;
     FairEventManager*  fManager;
     TGNumberEntry*  fCurrentEvent, *fCurrentPDG;
+    TGNumberEntry*  fCurrentTime;
+    TGNumberEntry*  fTimeStep;
     TGCheckButton*  fVizPri;
+    TGCheckButton*  fSavePicture;
+    TGCheckButton*  fTimebased;
     TEveGValuator* fMinEnergy ,*fMaxEnergy;
     TGLabel* fEventTime;
+    TGLabel* fT0Time;
+
   public:
     FairEventManagerEditor(const TGWindow* p=0, Int_t width=170, Int_t height=30,
                            UInt_t options = kChildFrame, Pixel_t back=GetDefaultFrameBackground());
     virtual ~FairEventManagerEditor() {}
     void SetModel( TObject* obj);
     virtual void SelectEvent();
+    virtual void SetTime();
     virtual void SelectPDG();
     void DoVizPri();
+    void DoSavePicture();
     virtual void MaxEnergy();
     virtual void MinEnergy();
     virtual void Init();
+
+  protected:
+    void CreateSubFrameInfo();
+    void CreateSubFrameAnimation();
+
 
     ClassDef(FairEventManagerEditor, 0); // Specialization of TGedEditor for proper update propagation to TEveManager.
 };

@@ -56,103 +56,154 @@ FairEventManagerEditor::FairEventManagerEditor(const TGWindow* p, Int_t width, I
 void FairEventManagerEditor::Init()
 {
 
-  FairRootManager* fRootManager=FairRootManager::Instance();
-  TChain* chain =fRootManager->GetInChain();
-  Int_t Entries= chain->GetEntriesFast();
+  CreateSubFrameInfo();
+  CreateSubFrameAnimation();
 
-  MakeTitle("FairEventManager  Editor");
-  TGVerticalFrame*      fInfoFrame= CreateEditorTabSubFrame("Info");
-  TGCompositeFrame* title1 = new TGCompositeFrame(fInfoFrame, 250, 10,
-      kVerticalFrame | kLHintsExpandX |
-      kFixedWidth    | kOwnBackground);
-
-  TString Infile= "Input file : ";
-//  TFile* file =FairRunAna::Instance()->GetInputFile();
-  TFile* file =FairRootManager::Instance()->GetInChain()->GetFile();
-  Infile+=file->GetName();
-  TGLabel* TFName=new TGLabel(title1, Infile.Data());
-  title1->AddFrame(TFName);
-
-  UInt_t RunId= FairRunAna::Instance()->getRunId();
-  TString run= "Run Id : ";
-  run += RunId;
-  TGLabel* TRunId=new TGLabel(title1, run.Data());
-  title1->AddFrame( TRunId);
-
-  TString nevent= "No of events : ";
-  nevent +=Entries ;
-  TGLabel* TEvent=new TGLabel(title1, nevent.Data());
-  title1->AddFrame(TEvent);
-
-  Int_t nodes= gGeoManager->GetNNodes();
-  TString NNodes= "No. of Nodes : ";
-  NNodes += nodes;
-  TGLabel* NoNode=new TGLabel(title1, NNodes.Data());
-  title1->AddFrame( NoNode);
-
-  TGHorizontalFrame* f = new TGHorizontalFrame(title1);
-  TGLabel* l = new TGLabel(f, "Current Event:");
-  f->AddFrame(l, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 1, 2, 1, 1));
-  fCurrentEvent = new TGNumberEntry(f, 0., 6, -1,
-                                    TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative,
-                                    TGNumberFormat::kNELLimitMinMax, 0, Entries);
-  f->AddFrame(fCurrentEvent, new TGLayoutHints(kLHintsLeft, 1, 1, 1, 1));
-  fCurrentEvent->Connect("ValueSet(Long_t)","FairEventManagerEditor", this, "SelectEvent()");
-  title1->AddFrame(f);
-
-  TGHorizontalFrame* f2 = new TGHorizontalFrame(title1);
-  TGLabel* EventTimeLabel = new TGLabel(f2, "Event Time: ");
-  fEventTime = new TGLabel(f2,"");
-  f2->AddFrame(EventTimeLabel);
-  f2->AddFrame(fEventTime);
-  title1->AddFrame(f2);
-
-  fVizPri = new TGCheckButton(title1, "Primary Only");
-  AddFrame(fVizPri, new TGLayoutHints(kLHintsTop, 3, 1, 1, 0));
-  fVizPri->Connect("Toggled(Bool_t)", "FairEventManagerEditor", this, "DoVizPri()");
-
-  title1->AddFrame(fVizPri);
-
-  TGHorizontalFrame* f1 = new TGHorizontalFrame(title1);
-  TGLabel* L1 = new TGLabel(f1, "Select PDG :");
-  f1->AddFrame(L1, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 1, 2, 1, 1));
-  fCurrentPDG = new TGNumberEntry(f1, 0., 12, -1,
-                                  TGNumberFormat::kNESInteger, TGNumberFormat::kNEAAnyNumber,
-                                  TGNumberFormat::kNELNoLimits, 0, 1);
-  f1->AddFrame(fCurrentPDG, new TGLayoutHints(kLHintsLeft, 1, 1, 1, 1));
-  fCurrentPDG->Connect("ValueSet(Long_t)","FairEventManagerEditor", this, "SelectPDG()");
-  title1->AddFrame(f1);
-
-
-  fMinEnergy = new TEveGValuator(title1, "Min Energy:", 90, 0);
-  fMinEnergy->SetNELength(5);
-  fMinEnergy->SetLabelWidth(80);
-  fMinEnergy->Build();
-  fMinEnergy->SetLimits(0, MAXE, 2501, TGNumberFormat::kNESRealOne);
-  fMinEnergy->SetToolTip("Minimum energy of displayed track.");
-  fMinEnergy->Connect("ValueSet(Double_t)", "FairEventManagerEditor",this, "MinEnergy()");
-  title1->AddFrame(fMinEnergy, new TGLayoutHints(kLHintsTop, 1, 1, 1, 0));
-
-
-  fMaxEnergy = new TEveGValuator(title1, "Max Energy:", 90, 0);
-  fMaxEnergy->SetNELength(5);
-  fMaxEnergy->SetLabelWidth(80);
-  fMaxEnergy->Build();
-  fMaxEnergy->SetLimits(0, MAXE, 2501, TGNumberFormat::kNESRealOne);
-  fMaxEnergy->SetToolTip("Maximum energy of displayed track.");
-  fMaxEnergy->SetValue(MAXE);
-  fMaxEnergy->Connect("ValueSet(Double_t)", "FairEventManagerEditor",this, "MaxEnergy()");
-  title1->AddFrame(fMaxEnergy, new TGLayoutHints(kLHintsTop, 1, 1, 1, 0));
-
-  TGTextButton* fUpdate = new TGTextButton(title1, "Update");
-  title1->AddFrame(fUpdate, new TGLayoutHints(kLHintsRight | kLHintsExpandX, 5,5,1,1));
-  fUpdate->Connect("Clicked()", "FairEventManagerEditor", this, "SelectEvent()");
-
-  fInfoFrame->AddFrame(title1, new TGLayoutHints(kLHintsTop, 0, 0, 2, 0));
-
-  fManager->SetMaxEnergy(MAXE);
 }
 
+void FairEventManagerEditor::CreateSubFrameInfo()
+{
+
+	TChain* chain =FairRootManager::Instance()->GetInChain();
+	  Int_t Entries= chain->GetEntriesFast();
+
+	  MakeTitle("FairEventManager  Editor");
+	  TGVerticalFrame*      infoFrame= CreateEditorTabSubFrame("Info");
+	  TGCompositeFrame* title1 = new TGCompositeFrame(infoFrame, 250, 10,
+	      kVerticalFrame | kLHintsExpandX |
+	      kFixedWidth    | kOwnBackground);
+
+	  TString Infile= "Input file : ";
+	//  TFile* file =FairRunAna::Instance()->GetInputFile();
+	  TFile* file =FairRootManager::Instance()->GetInChain()->GetFile();
+	  Infile+=file->GetName();
+	  TGLabel* TFName=new TGLabel(title1, Infile.Data());
+	  title1->AddFrame(TFName);
+
+	  UInt_t RunId= FairRunAna::Instance()->getRunId();
+	  TString run= "Run Id : ";
+	  run += RunId;
+	  TGLabel* TRunId=new TGLabel(title1, run.Data());
+	  title1->AddFrame( TRunId);
+
+	  TString nevent= "No of events : ";
+	  nevent +=Entries ;
+	  TGLabel* TEvent=new TGLabel(title1, nevent.Data());
+	  title1->AddFrame(TEvent);
+
+	  Int_t nodes= gGeoManager->GetNNodes();
+	  TString NNodes= "No. of Nodes : ";
+	  NNodes += nodes;
+	  TGLabel* NoNode=new TGLabel(title1, NNodes.Data());
+	  title1->AddFrame( NoNode);
+
+	  TGVerticalFrame* vFTime = new TGVerticalFrame(title1, 250, 100);
+
+	  fTimebased = new TGCheckButton(vFTime, "Timebased");
+	  AddFrame(fTimebased, new TGLayoutHints(kLHintsLeft, 3, 1, 1, 0));
+	  if (FairRootManager::Instance()->IsTimeStampMode() == kTRUE){
+		  fTimebased->SetState(kButtonDown);
+	  }
+
+	  TGVerticalFrame* f = new TGVerticalFrame(vFTime);
+	  TGLabel* l = new TGLabel(f, "Current Event:");
+	  f->AddFrame(l, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 1, 2, 1, 1));
+	  fCurrentEvent = new TGNumberEntry(f, 0., 6, -1,
+	                                    TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative,
+	                                    TGNumberFormat::kNELLimitMinMax, 0, Entries);
+	  f->AddFrame(fCurrentEvent, new TGLayoutHints(kLHintsLeft, 1, 1, 1, 1));
+	  fCurrentEvent->Connect("ValueSet(Long_t)","FairEventManagerEditor", this, "SelectEvent()");
+	  vFTime->AddFrame(f);
+
+	  title1->AddFrame(vFTime);
+
+	  TGHorizontalFrame* f0 = new TGHorizontalFrame(title1);
+	  fCurrentTime = new TGNumberEntry(f0, 0., 6, -1,
+	          TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative,
+	          TGNumberFormat::kNELNoLimits, 0, Entries);
+	  f0->AddFrame(fCurrentTime, new TGLayoutHints(kLHintsLeft,1,2,1,1));
+	  fCurrentTime->Connect("ValueSet(Long_t)","FairEventManagerEditor",this, "SetTime()");
+	  fTimeStep = new TGNumberEntry(f0, 0., 6, -1,
+	          TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative,
+	          TGNumberFormat::kNELNoLimits, 0, Entries);
+	  f0->AddFrame(fTimeStep, new TGLayoutHints(kLHintsRight | kLHintsExpandX,1,2,1,1));
+
+	  title1->AddFrame(f0);
+
+	  TGHorizontalFrame* f2 = new TGHorizontalFrame(title1);
+	  TGLabel* EventTimeLabel = new TGLabel(f2, "Event Time: ");
+	  fEventTime = new TGLabel(f2,"");
+	  f2->AddFrame(EventTimeLabel);
+	  f2->AddFrame(fEventTime);
+	  title1->AddFrame(f2);
+
+	  TGHorizontalFrame* f3 = new TGHorizontalFrame(title1);
+	  TGLabel* T0TimeLabel = new TGLabel(f3, "T0 Time: ");
+	  fT0Time = new TGLabel(f3,"");
+	  f3->AddFrame(T0TimeLabel);
+	  f3->AddFrame(fT0Time);
+	  title1->AddFrame(f3);
+
+	  fVizPri = new TGCheckButton(title1, "Primary Only");
+	  AddFrame(fVizPri, new TGLayoutHints(kLHintsTop, 3, 1, 1, 0));
+	  fVizPri->Connect("Toggled(Bool_t)", "FairEventManagerEditor", this, "DoVizPri()");
+	  title1->AddFrame(fVizPri);
+
+	  fSavePicture = new TGCheckButton(title1, "Save Picture");
+	  AddFrame(fSavePicture, new TGLayoutHints(kLHintsTop, 3,1,1,0));
+	  fSavePicture->Connect("Toggled(Bool_t)", "FairEventManagerEditor", this, "DoSavePicture()");
+	  title1->AddFrame(fSavePicture);
+
+	  TGHorizontalFrame* f1 = new TGHorizontalFrame(title1);
+	  TGLabel* L1 = new TGLabel(f1, "Select PDG :");
+	  f1->AddFrame(L1, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 1, 2, 1, 1));
+	  fCurrentPDG = new TGNumberEntry(f1, 0., 12, -1,
+	                                  TGNumberFormat::kNESInteger, TGNumberFormat::kNEAAnyNumber,
+	                                  TGNumberFormat::kNELNoLimits, 0, 1);
+	  f1->AddFrame(fCurrentPDG, new TGLayoutHints(kLHintsLeft, 1, 1, 1, 1));
+	  fCurrentPDG->Connect("ValueSet(Long_t)","FairEventManagerEditor", this, "SelectPDG()");
+	  title1->AddFrame(f1);
+
+
+	  fMinEnergy = new TEveGValuator(title1, "Min Energy:", 90, 0);
+	  fMinEnergy->SetNELength(5);
+	  fMinEnergy->SetLabelWidth(80);
+	  fMinEnergy->Build();
+	  fMinEnergy->SetLimits(0, MAXE, 2501, TGNumberFormat::kNESRealOne);
+	  fMinEnergy->SetToolTip("Minimum energy of displayed track.");
+	  fMinEnergy->Connect("ValueSet(Double_t)", "FairEventManagerEditor",this, "MinEnergy()");
+	  title1->AddFrame(fMinEnergy, new TGLayoutHints(kLHintsTop, 1, 1, 1, 0));
+
+
+	  fMaxEnergy = new TEveGValuator(title1, "Max Energy:", 90, 0);
+	  fMaxEnergy->SetNELength(5);
+	  fMaxEnergy->SetLabelWidth(80);
+	  fMaxEnergy->Build();
+	  fMaxEnergy->SetLimits(0, MAXE, 2501, TGNumberFormat::kNESRealOne);
+	  fMaxEnergy->SetToolTip("Maximum energy of displayed track.");
+	  fMaxEnergy->SetValue(MAXE);
+	  fMaxEnergy->Connect("ValueSet(Double_t)", "FairEventManagerEditor",this, "MaxEnergy()");
+	  title1->AddFrame(fMaxEnergy, new TGLayoutHints(kLHintsTop, 1, 1, 1, 0));
+
+	  TGTextButton* fUpdate = new TGTextButton(title1, "Update");
+	  title1->AddFrame(fUpdate, new TGLayoutHints(kLHintsRight | kLHintsExpandX, 5,5,1,1));
+	  fUpdate->Connect("Clicked()", "FairEventManagerEditor", this, "SelectEvent()");
+
+	  infoFrame->AddFrame(title1, new TGLayoutHints(kLHintsTop, 0, 0, 2, 0));
+
+	  fManager->SetMaxEnergy(MAXE);
+}
+
+void FairEventManagerEditor::CreateSubFrameAnimation()
+{
+	TGVerticalFrame*      animationFrame= CreateEditorTabSubFrame("Animation");
+	TGCompositeFrame* title1 = new TGCompositeFrame(animationFrame, 250, 10,
+		      kVerticalFrame | kLHintsExpandX |
+		      kFixedWidth    | kOwnBackground);
+
+	animationFrame->AddFrame(title1, new TGLayoutHints(kLHintsTop, 0, 0, 2, 0));
+
+}
 
 //______________________________________________________________________________
 void FairEventManagerEditor::MaxEnergy()
@@ -173,6 +224,13 @@ void FairEventManagerEditor::DoVizPri()
   if (fVizPri->IsOn()) { fManager->SetPriOnly(kTRUE); }
   else { fManager->SetPriOnly(kFALSE); }
 }
+//______________________________________________________________________________
+void FairEventManagerEditor::DoSavePicture()
+{
+  if (fSavePicture->IsOn()) { fManager->SetCreatePicture(kTRUE); }
+  else { fManager->SetCreatePicture(kFALSE); }
+}
+
 //______________________________________________________________________________
 void FairEventManagerEditor::SelectPDG()
 {
@@ -196,6 +254,20 @@ void FairEventManagerEditor::SelectEvent()
   fMaxEnergy->SetValue( fManager->GetEvtMaxEnergy());
   Update();
 
+}
+//______________________________________________________________________________
+void FairEventManagerEditor::SetTime()
+{
+	fManager->SetT0Time(fCurrentTime->GetNumber() * fTimeStep->GetNumber());
+	std::cout << "FairEventManagerEditor::SetTime() called: " << fCurrentTime->GetNumber() << " " << fTimeStep->GetNumber() << std::endl;
+	TString time;
+	// time+=(FairRootManager::Instance()->GetEventTime());
+	time.Form("%.2f", fManager->GetT0Time());
+	time += " ns";
+	fT0Time->SetText(time.Data());
+	std::cout << "FairEventManagerEditor::SetTime() " << fManager->GetT0Time() << std::endl;
+	std::cout << "EventTime text: " << time.Data() << std::endl;
+	fManager->GotoEvent(fCurrentEvent->GetIntNumber());
 }
 //______________________________________________________________________________
 void FairEventManagerEditor::SetModel( TObject* obj)

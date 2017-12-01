@@ -54,6 +54,8 @@ FairEventManager::FairEventManager()
    fEvent(0),
    fPriOnly(kFALSE),
    fCurrentPDG(0),
+   fCurrentTime(0.),
+   fT0Time(0.),
    fMinEnergy(0),
    fMaxEnergy(25),
    fEvtMinEnergy(0),
@@ -71,7 +73,8 @@ FairEventManager::FairEventManager()
    fRhoZProjManager(NULL),
    fAxesPhi(NULL),
    fAxesRho(NULL),
-   fXMLConfig("")
+   fXMLConfig(""),
+   fCreatePicture(kFALSE)
 {
   fgRinstance=this;
   AddParticlesToPdgDataBase();
@@ -220,19 +223,32 @@ void FairEventManager::Open()
 void FairEventManager::GotoEvent(Int_t event)
 {
   fEntry=event;
+  if (fCreatePicture == kTRUE){
+	  TakePicture();
+  }
   fRunAna->Run(static_cast<Long64_t>(event));
+  SetCurrentTime(FairRootManager::Instance()->GetEventTime());
 }
 //______________________________________________________________________________
 void FairEventManager::NextEvent()
 {
   fEntry+=1;
+
+  if (fCreatePicture == kTRUE){
+	  TakePicture();
+  }
   fRunAna->Run(static_cast<Long64_t>(fEntry));
+  SetCurrentTime(FairRootManager::Instance()->GetEventTime());
 }
 //______________________________________________________________________________
 void FairEventManager::PrevEvent()
 {
   fEntry-=1;
+  if (fCreatePicture == kTRUE){
+	  TakePicture();
+  }
   fRunAna->Run(static_cast<Long64_t>(fEntry));
+  SetCurrentTime(FairRootManager::Instance()->GetEventTime());
 }
 //______________________________________________________________________________
 void FairEventManager::Close()
@@ -469,7 +485,14 @@ Int_t FairEventManager::StringToColor(TString color) const {
 		}
 		return col_val;
 	}else{
-		return color.Atoi();
 	}
 }
 
+void FairEventManager::TakePicture()
+{
+	  TGLViewer* glViewer = gEve->GetDefaultGLViewer();
+	  TString output = "EventAuto_";
+	  output+=(fEntry);
+	  output.Append(".gif");
+	  glViewer->SavePicture(output.Data());
+}

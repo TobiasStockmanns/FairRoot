@@ -46,14 +46,19 @@ class FairEventManager : public TEveEventManager
     void AddTask(FairTask* t) {fRunAna->AddTask(t);}
     virtual void Init( Int_t visopt = 1, Int_t vislvl = 3, Int_t maxvisnds = 10000);
     virtual Int_t GetCurrentEvent() {return fEntry;}
+    virtual void SetCurrentTime(Double_t time){ fCurrentTime = time; }
+    virtual void SetT0Time(Double_t time){ fT0Time = time; }
     virtual void SetPriOnly(Bool_t Pri) {fPriOnly=Pri;}
     virtual Bool_t IsPriOnly() {return fPriOnly;}
     virtual void SelectPDG(Int_t PDG) {fCurrentPDG= PDG;}
     virtual Int_t GetCurrentPDG() {return fCurrentPDG;}
+    virtual Double_t GetCurrentTime(){ return fCurrentTime;}
+    virtual Double_t GetT0Time(){ return fT0Time; }
     virtual void SetMaxEnergy( Float_t max) {fMaxEnergy = max;}
     virtual void SetMinEnergy( Float_t min) {fMinEnergy = min;}
     virtual void SetEvtMaxEnergy( Float_t max) {fEvtMaxEnergy = max;}
     virtual void SetEvtMinEnergy( Float_t min) {fEvtMinEnergy = min;}
+    virtual void SetCreatePicture(Bool_t val) { fCreatePicture = val; std::cout << "CreatePicture set" << val; }
     virtual Float_t GetEvtMaxEnergy() {return fEvtMaxEnergy ;}
     virtual Float_t GetEvtMinEnergy() {return fEvtMinEnergy ;}
     virtual Float_t GetMaxEnergy() {return fMaxEnergy;}
@@ -62,6 +67,7 @@ class FairEventManager : public TEveEventManager
     virtual void SetRhoZPlane(Double_t a, Double_t b, Double_t c, Double_t d);
     void UpdateEditor();
     virtual void AddParticlesToPdgDataBase(Int_t pdg=0);
+    void TakePicture();
     ClassDef(FairEventManager,1);
   protected:
     TEveViewer* GetRPhiView() const {return fRPhiView;};
@@ -85,6 +91,8 @@ class FairEventManager : public TEveEventManager
     TGListTreeItem*  fEvent;     //!
     Bool_t fPriOnly;             //!
     Int_t fCurrentPDG;           //!
+    Double_t fCurrentTime;			//!
+    Double_t fT0Time;			//!
     Float_t fMinEnergy;         //!
     Float_t fMaxEnergy;         //!
     Float_t fEvtMinEnergy;         //!
@@ -103,7 +111,8 @@ class FairEventManager : public TEveEventManager
     TEveProjectionAxes *fAxesPhi;
     TEveProjectionAxes *fAxesRho;
     TString fXMLConfig;
-    std::map<int,int> fPDGToColor;;
+    std::map<int,int> fPDGToColor;
+    Bool_t fCreatePicture;
 
     static FairEventManager*    fgRinstance; //!
     FairEventManager(const FairEventManager&);
