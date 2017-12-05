@@ -223,6 +223,7 @@ void FairEventManager::Open()
 void FairEventManager::GotoEvent(Int_t event)
 {
   fEntry=event;
+  std::cout << "FairEventManager::GotoEvent called " << fCreatePicture << std::endl;
   if (fCreatePicture == kTRUE){
 	  TakePicture();
   }
@@ -492,7 +493,7 @@ void FairEventManager::TakePicture()
 {
 	  TGLViewer* glViewer = gEve->GetDefaultGLViewer();
 	  TString output = "EventAuto_";
-	  output+=(fEntry);
+	  output+=(fT0Time);
 	  output.Append(".gif");
 	  glViewer->SavePicture(output.Data());
 }

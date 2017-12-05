@@ -37,6 +37,9 @@ class FairEventManagerEditor : public TGedFrame
     TGNumberEntry*  fCurrentEvent, *fCurrentPDG;
     TGNumberEntry*  fCurrentTime;
     TGNumberEntry*  fTimeStep;
+    TGNumberEntry*  fStart;
+    TGNumberEntry*  fStop;
+    TGNumberEntry*  fStep;
     TGCheckButton*  fVizPri;
     TGCheckButton*  fSavePicture;
     TGCheckButton*  fTimebased;
@@ -54,6 +57,7 @@ class FairEventManagerEditor : public TGedFrame
     virtual void SelectPDG();
     void DoVizPri();
     void DoSavePicture();
+    void DoAnimation();
     virtual void MaxEnergy();
     virtual void MinEnergy();
     virtual void Init();

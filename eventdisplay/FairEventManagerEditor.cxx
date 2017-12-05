@@ -20,6 +20,7 @@
 #include "TGNumberEntry.h"              // for TGNumberEntry, etc
 #include "TGeoManager.h"                // for TGeoManager, gGeoManager
 #include "TString.h"                    // for TString
+#include "TEveManager.h"
 
 #include <stddef.h>                     // for NULL
 
@@ -98,9 +99,9 @@ void FairEventManagerEditor::CreateSubFrameInfo()
 	  title1->AddFrame( NoNode);
 
 	  TGVerticalFrame* vFTime = new TGVerticalFrame(title1, 250, 100);
+	  fTimebased = new TGCheckButton(title1, "Timebased");
+	  title1->AddFrame(fTimebased, new TGLayoutHints(kLHintsLeft, 3, 1, 1, 0));
 
-	  fTimebased = new TGCheckButton(vFTime, "Timebased");
-	  AddFrame(fTimebased, new TGLayoutHints(kLHintsLeft, 3, 1, 1, 0));
 	  if (FairRootManager::Instance()->IsTimeStampMode() == kTRUE){
 		  fTimebased->SetState(kButtonDown);
 	  }
@@ -117,18 +118,29 @@ void FairEventManagerEditor::CreateSubFrameInfo()
 
 	  title1->AddFrame(vFTime);
 
-	  TGHorizontalFrame* f0 = new TGHorizontalFrame(title1);
-	  fCurrentTime = new TGNumberEntry(f0, 0., 6, -1,
-	          TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative,
-	          TGNumberFormat::kNELNoLimits, 0, Entries);
-	  f0->AddFrame(fCurrentTime, new TGLayoutHints(kLHintsLeft,1,2,1,1));
-	  fCurrentTime->Connect("ValueSet(Long_t)","FairEventManagerEditor",this, "SetTime()");
-	  fTimeStep = new TGNumberEntry(f0, 0., 6, -1,
-	          TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative,
-	          TGNumberFormat::kNELNoLimits, 0, Entries);
-	  f0->AddFrame(fTimeStep, new TGLayoutHints(kLHintsRight | kLHintsExpandX,1,2,1,1));
-
-	  title1->AddFrame(f0);
+	  if (FairRootManager::Instance()->IsTimeStampMode() == kTRUE){
+		  TGVerticalFrame* f0 = new TGVerticalFrame(title1);
+		  TGLabel* l1 = new TGLabel(f0, "Current T0 (step/width):");
+		  f0->AddFrame(l1, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 1, 2, 1, 1));
+		  TGHorizontalFrame* hf0 = new TGHorizontalFrame(f0);
+		  fCurrentTime = new TGNumberEntry(hf0, 0., 6, -1,
+				  TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative,
+				  TGNumberFormat::kNELNoLimits, 0, Entries);
+		  hf0->AddFrame(fCurrentTime, new TGLayoutHints(kLHintsLeft,1,2,1,1));
+		  fCurrentTime->Connect("ValueSet(Long_t)","FairEventManagerEditor",this, "SetTime()");
+		  fTimeStep = new TGNumberEntry(hf0, 0., 6, -1,
+				  TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative,
+				  TGNumberFormat::kNELNoLimits, 0, Entries);
+		  hf0->AddFrame(fTimeStep, new TGLayoutHints(kLHintsRight | kLHintsExpandX,1,2,1,1));
+		  TGHorizontalFrame* f3 = new TGHorizontalFrame(f0);
+			  TGLabel* T0TimeLabel = new TGLabel(f3, "T0 Time: ");
+			  fT0Time = new TGLabel(f3,"");
+			  f3->AddFrame(T0TimeLabel);
+			  f3->AddFrame(fT0Time);
+		  f0->AddFrame(hf0);
+		  f0->AddFrame(f3);
+		  title1->AddFrame(f0);
+	  }
 
 	  TGHorizontalFrame* f2 = new TGHorizontalFrame(title1);
 	  TGLabel* EventTimeLabel = new TGLabel(f2, "Event Time: ");
@@ -136,13 +148,6 @@ void FairEventManagerEditor::CreateSubFrameInfo()
 	  f2->AddFrame(EventTimeLabel);
 	  f2->AddFrame(fEventTime);
 	  title1->AddFrame(f2);
-
-	  TGHorizontalFrame* f3 = new TGHorizontalFrame(title1);
-	  TGLabel* T0TimeLabel = new TGLabel(f3, "T0 Time: ");
-	  fT0Time = new TGLabel(f3,"");
-	  f3->AddFrame(T0TimeLabel);
-	  f3->AddFrame(fT0Time);
-	  title1->AddFrame(f3);
 
 	  fVizPri = new TGCheckButton(title1, "Primary Only");
 	  AddFrame(fVizPri, new TGLayoutHints(kLHintsTop, 3, 1, 1, 0));
@@ -201,6 +206,30 @@ void FairEventManagerEditor::CreateSubFrameAnimation()
 		      kVerticalFrame | kLHintsExpandX |
 		      kFixedWidth    | kOwnBackground);
 
+	TGVerticalFrame* vf1 = new TGVerticalFrame(title1);
+	TGLabel* labelAnimation = new TGLabel(vf1, "Start, Stop, Step");
+	vf1->AddFrame(labelAnimation, new TGLayoutHints(kLHintsTop, 0, 0, 2, 0));
+
+	TGHorizontalFrame* hfRange = new TGHorizontalFrame(vf1);
+	fStart = new TGNumberEntry(hfRange, 0., 6, -1,
+					  TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative,
+					  TGNumberFormat::kNELNoLimits, 0, 999999);
+	fStop = new TGNumberEntry(hfRange, 0., 6, -1,
+					  TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative,
+					  TGNumberFormat::kNELNoLimits, 0, 999999);
+	fStep = new TGNumberEntry(hfRange, 0., 6, -1,
+					  TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative,
+					  TGNumberFormat::kNELNoLimits, 0, 999999);
+	hfRange->AddFrame(fStart,  new TGLayoutHints(kLHintsTop, 0, 0, 2, 0));
+	hfRange->AddFrame(fStop, new TGLayoutHints(kLHintsTop, 0, 0, 2, 0));
+	hfRange->AddFrame(fStep, new TGLayoutHints(kLHintsTop, 0, 0, 2, 0));
+
+	TGTextButton* btnAnimate = new TGTextButton(hfRange, "Animate");
+		  hfRange->AddFrame(btnAnimate, new TGLayoutHints(kLHintsRight | kLHintsExpandX, 5,5,1,1));
+		  btnAnimate->Connect("Clicked()", "FairEventManagerEditor", this, "DoAnimation()");
+
+	vf1->AddFrame(hfRange, new TGLayoutHints(kLHintsTop, 0, 0, 2, 0));
+	title1->AddFrame(vf1, new TGLayoutHints(kLHintsTop, 0, 0, 2, 0));
 	animationFrame->AddFrame(title1, new TGLayoutHints(kLHintsTop, 0, 0, 2, 0));
 
 }
@@ -229,6 +258,22 @@ void FairEventManagerEditor::DoSavePicture()
 {
   if (fSavePicture->IsOn()) { fManager->SetCreatePicture(kTRUE); }
   else { fManager->SetCreatePicture(kFALSE); }
+}
+
+void FairEventManagerEditor::DoAnimation()
+{
+	int start = fStart->GetIntNumber();
+	int stop = fStop->GetIntNumber();
+	int step = fStep->GetIntNumber();
+
+	fTimeStep->SetIntNumber(step);
+
+	for (int i = start; i < stop; i++){
+		fCurrentTime->SetIntNumber(i);
+		SetTime();
+
+		gEve->DoRedraw3D();
+	}
 }
 
 //______________________________________________________________________________
